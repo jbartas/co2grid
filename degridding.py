@@ -28,8 +28,8 @@ def latlon_to_km_vector(lat1, lon1, lat2, lon2):
     return dy, dx
 
 def grid_segment(lats, lons, co2s, us, vs,
+                 #i_start, 
                  ov,
-                 #i_start, ov,
                  rows=8,
                  min_dist_samples=16,
                  threshold_multiplier=1.5,
@@ -93,6 +93,7 @@ def grid_segment(lats, lons, co2s, us, vs,
             invalidp = 0
 
             # path vector: from previous row (same column) to current
+            # distance between 2 samples 
             if i_row > 0 and not np.isnan(lat_grid[i_row-1, j_col]):
                 path_vecs[i_row, j_col] = latlon_to_km_vector(
                     lat_grid[i_row-1, j_col],
@@ -138,6 +139,7 @@ def grid_segment(lats, lons, co2s, us, vs,
     # slice away unused columns
     used_cols = j_col + (1 if i_row>0 else 0)
 
+    # add a path-distance element?
     # single output
     seg = {
             "path": path_vecs [:, :used_cols, :],
@@ -182,11 +184,12 @@ def gridding_with_gaps(lats, lons, co2s, us, vs,
         seg_us = us[start:end]
         seg_vs = vs[start:end]
 
-        segs, i_start = grid_segment(
-                                    seg_lats, seg_lons, seg_co2, seg_us, seg_vs,
-                                    i_start, ov_pts,
-                                    rows, min_dist_samples, threshold_multiplier, invalid_max
-                                    )
+        segs = grid_segment(
+            seg_lats, seg_lons, seg_co2, seg_us, seg_vs,
+            ov_pts, # added, it's in the func def.
+            #i_start, 
+            int(rows), min_dist_samples, threshold_multiplier, invalid_max
+            )
 
         segments.append(segs)
 
@@ -195,9 +198,12 @@ def gridding_with_gaps(lats, lons, co2s, us, vs,
 
     return segments
 
-Testing the function
+# Testing the function
 
-filestr = '/content/drive/MyDrive/CO2_absorption_project/Code/Pirouette/jan19.h5'
+#filestr = '/content/drive/MyDrive/CO2_absorption_project/Code/Pirouette/jan19.h5'
+
+# Test data file on Winows 
+filestr = "C:\\jbartas\\coLabs\\jan19.h5"
 
 # Import h5py to read h5 files
 import h5py
@@ -221,4 +227,14 @@ v_full = v_full[qflag==1]
 # Need to manually put in first grid value!!
 
 # Grid
-segs = gridding_with_gaps(lat_full, lon_full, co2_full, u_full, v_full, i_start = ???)
+#segs = gridding_with_gaps(lat_full, lon_full, co2_full, u_full, v_full, i_start = ???)
+segs = gridding_with_gaps(lat_full, lon_full, co2_full, u_full, v_full)
+
+outfile = filestr.split('.h5')[0] + ".segs"
+print("outfile: ", outfile)
+
+from pprint import pprint
+
+with open(outfile, "w", encoding="utf-8") as f:
+    pprint(segs, stream=f, width=120, sort_dicts=False, compact=True)
+
