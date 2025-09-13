@@ -1,6 +1,23 @@
 import numpy as np
 from math import radians, sin, cos, sqrt, asin
 
+import json
+
+elements = []   # global list of Element instances
+
+class element:
+    def __init__(self, lat, lon, co2, u, v):
+        self.lat = float(lat)
+        self.lon = float(lon)
+        self.co2 = float(co2)
+        self.u = float(u)
+        self.v = float(v)
+        elements.append(self)
+
+    def to_dict(self):
+        return {"lat": self.lat, "lon": self.lon, "co2": self.co2, "u": self.u, "v": self.v }
+
+
 def lldist(lat1, lon1, lat2, lon2):
     """
     Spherical coordinate distance between two points on Earth (km).
@@ -91,6 +108,8 @@ def grid_segment(lats, lons, co2s, us, vs,
             u_grid[i_row, j_col] = u
             v_grid[i_row, j_col] = v
             invalidp = 0
+
+            element(lat, lon, co2, u, v)
 
             # path vector: from previous row (same column) to current
             # distance between 2 samples 
@@ -203,11 +222,13 @@ def gridding_with_gaps(lats, lons, co2s, us, vs,
 #filestr = '/content/drive/MyDrive/CO2_absorption_project/Code/Pirouette/jan19.h5'
 
 # Test data file on Winows 
-filestr = "C:\\jbartas\\coLabs\\jan19.h5"
+filestr = "C:\\jbartas\\gridding\\jan19.h5"
 
 # Import h5py to read h5 files
 import h5py
 import numpy as np
+
+
 
 with h5py.File(filestr, 'r') as file:
   co2_full = file['/RetrievalResults/xco2'][()];
@@ -236,5 +257,10 @@ print("outfile: ", outfile)
 from pprint import pprint
 
 with open(outfile, "w", encoding="utf-8") as f:
-    pprint(segs, stream=f, width=120, sort_dicts=False, compact=True)
+  pprint(segs, stream=f, width=120, sort_dicts=False, compact=True)
+
+elementfile = "C:\\jbartas\\gridding\\elements.json"
+
+with open(elementfile, "w", encoding="utf-8") as f:
+  json.dump([e.to_dict() for e in elements], f, indent=2)
 
